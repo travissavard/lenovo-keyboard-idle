@@ -1,0 +1,12 @@
+# Local settings, logs, credentials, and generated files never belong in source control.
+settings.json
+*.log
+*.bak
+*.dll
+*.exe
+*.pdb
+.env
+.env.*
+work/
+test-results/
+*.zip

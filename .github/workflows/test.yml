@@ -1,0 +1,12 @@
+name: Windows tests
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Syntax, policy, state, path controls, compilation
+        shell: powershell
+        run: ./tests/Run-Tests.ps1
