@@ -25,13 +25,15 @@ Protect-AppDirectory $installPath
 Protect-AppDirectory $dataPath
 $settingsPath = Join-Path $dataPath 'settings.json'
 Assert-NoReparsePoint $settingsPath
-$settings = @{ TimeoutSeconds = 10; OnBrightness = 2; MouseWakeEnabled = $true }
+$settings = @{ TimeoutSeconds = 10; OnBrightness = 2; MouseWakeEnabled = $true; SuppressFirstWakeKey = $true; ProlongedWakeHold = $true }
 if (Test-Path -LiteralPath $settingsPath) {
     try {
         $old = Get-Content -LiteralPath $settingsPath -Raw | ConvertFrom-Json
         if ([int]$old.TimeoutSeconds -in 1,3,5,10,30,60,120,300) { $settings.TimeoutSeconds = [int]$old.TimeoutSeconds }
         if ([int]$old.OnBrightness -in 2,3) { $settings.OnBrightness = [int]$old.OnBrightness }
         if ($old.MouseWakeEnabled -is [bool]) { $settings.MouseWakeEnabled = $old.MouseWakeEnabled }
+        if ($old.SuppressFirstWakeKey -is [bool]) { $settings.SuppressFirstWakeKey = $old.SuppressFirstWakeKey }
+        if ($old.ProlongedWakeHold -is [bool]) { $settings.ProlongedWakeHold = $old.ProlongedWakeHold }
     } catch { Write-Warning 'Invalid settings will be replaced with defaults.' }
 }
 # Stop both the packaged task and the original prototype task on upgrade.

@@ -63,6 +63,7 @@ public sealed class KeyboardActivityClock : IDisposable {
  public uint Milliseconds() { return (uint)Math.Min(uint.MaxValue,Math.Max(0,Now()-Interlocked.Read(ref lastKeyboardTime))); }
  public void SetDark(bool dark) { policy.SetDark(dark,Now()); }
  public bool IsHolding() { return policy.IsHolding(Now()); }
+ public void Configure(bool suppressFirstKey, bool prolongedHold) { policy.Configure(suppressFirstKey,prolongedHold); }
  public void Dispose() {
   if(thread.IsAlive) {PostThreadMessage(threadId,0x12,IntPtr.Zero,IntPtr.Zero);thread.Join(5000);}
   ready.Dispose();

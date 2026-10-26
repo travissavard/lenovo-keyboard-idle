@@ -25,3 +25,26 @@ if(-not $p.IsHolding(119999)){throw 'Mouse wake after long pause did not hold.'}
 if($p.ProcessKey(69,$true,105001)){throw 'Keyboard after mouse wake was swallowed.'}
 'PASS: threshold, first press/repeat/release, next key, 15-second hold, normal use, rearm, mouse wake.'
 
+# Independent switches must work in all four combinations.
+foreach($suppress in @($false,$true)) {
+ foreach($hold in @($false,$true)) {
+  $q=New-Object WakeKeyPolicy
+  $q.Configure($suppress,$hold)
+  $q.SetDark($true,0)
+  if($q.ProcessKey(65,$true,15000) -ne $suppress){throw "Wrong first-key handling: suppress=$suppress hold=$hold"}
+  if($q.IsHolding(15001) -ne $hold){throw "Wrong hold: suppress=$suppress hold=$hold"}
+  if($q.ProcessKey(65,$false,15002) -ne $suppress){throw 'Wake key release mismatch.'}
+  if($q.ProcessKey(66,$true,15003)){throw 'Second key was swallowed.'}
+  if($q.IsHolding(30000)){throw 'Hold did not expire.'}
+ }
+}
+$q=New-Object WakeKeyPolicy
+$q.SetDark($true,0)
+$q.ProcessKey(65,$true,15000) | Out-Null
+$q.Configure($false,$false)
+if($q.IsHolding(15001)){throw 'Disabling hold did not cancel it immediately.'}
+if(-not $q.ProcessKey(65,$false,15002)){throw 'Release of an already consumed press leaked after disabling.'}
+$q.SetDark($true,20000)
+if($q.ProcessKey(65,$true,35000)){throw 'Disabling first-key swallowing did not persist.'}
+if($q.IsHolding(35001)){throw 'Disabling hold did not persist.'}
+'PASS: both switches independent; disabling hold cancels it; consumed-key release stays paired.'

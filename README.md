@@ -9,11 +9,12 @@ A small Windows tray utility that turns a compatible Lenovo laptop's keyboard ba
 - Right-click the blue information icon near the clock to select **1, 3, 5, 10, or 30 seconds**, or **1, 2, or 5 minutes**.
 - Choose **Low** or **High** under **Back-on brightness**.
 - Toggle **Mouse wakes keyboard**. When unchecked, keyboard input alone controls the idle timer and wake behavior.
-- After the backlight has been off for **15 seconds**, the next physical key press only wakes the light. That press, its repeats, and its release are consumed. Later keys type normally. The light stays on for **15 seconds**, then resumes the selected idle timeout.
-- A mouse wake after a long dark interval also gets the 15-second hold, if mouse wake is enabled. The next keyboard key then types normally.
+- Toggle **First wake key doesn't type**. When enabled, after the backlight has been off for **15 seconds**, the next physical key press only wakes the light. That press, its repeats, and its release are consumed. Later keys type normally. When disabled, that first key types normally too.
+- Independently toggle **Keep on for 15 seconds after long pause**. When enabled, waking after at least **15 seconds off** keeps the light on for **15 seconds**, then resumes the selected idle timeout. When disabled, the normal idle timeout applies immediately. Turning this option off cancels an active hold.
+- A mouse wake after a long dark interval also gets the 15-second hold, if both mouse wake and the hold option are enabled. The next keyboard key then types normally.
 - Preferences persist across restarts. The app starts at sign-in. **Exit** closes it until the next sign-in.
 
-The first wake key can be a modifier or shortcut key, and the hook can affect external keyboards in the same desktop session. Be aware of this behavior when entering shortcuts, passwords, or accessibility input. Synthetic input is not suppressed. Windows secure desktops and sign-in screens are outside the supported scope.
+When first-key suppression is enabled, the wake key can be a modifier or shortcut key, and the hook can affect external keyboards in the same desktop session. Be aware of this behavior when entering shortcuts, passwords, or accessibility input. Synthetic input is not suppressed. Windows secure desktops and sign-in screens are outside the supported scope.
 
 ## Requirements and compatibility
 
@@ -38,7 +39,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Install.ps1
 
 The installer copies the three source files to `%ProgramFiles%\KeyboardIdleBacklight`, provisions `%ProgramData%\KeyboardIdleBacklight`, and registers the **Lenovo Keyboard Idle** scheduled task. The task runs elevated in the installing user's interactive session; it does not store a password. It starts immediately and at subsequent sign-ins, including on battery power.
 
-Default preferences for a new installation are **10 seconds**, **Low**, and **mouse wake enabled**. The tray icon may appear under the **^** overflow arrow. If you install while signed in as a different administrator, startup belongs to that administrator; install using your intended Windows account.
+Default preferences for a new installation are **10 seconds**, **Low**, **mouse wake enabled**, **first wake key doesn't type enabled**, and **15-second hold enabled**. All five preferences are saved; upgrades without the new options retain the previous enabled behavior. The tray icon may appear under the **^** overflow arrow. If you install while signed in as a different administrator, startup belongs to that administrator; install using your intended Windows account.
 
 ## Update and uninstall
 

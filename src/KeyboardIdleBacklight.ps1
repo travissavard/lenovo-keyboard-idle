@@ -37,6 +37,8 @@ function Set-Light($Level, $State) {
 $script:timeoutSeconds = 10
 $script:onBrightness = 2
 $script:mouseWakeEnabled = $true
+$script:suppressFirstWakeKey = $true
+$script:prolongedWakeHold = $true
 $script:mode = $null
 $script:applyRequested = $false
 $configPath = (Join-Path ([Environment]::GetFolderPath('CommonApplicationData')) 'KeyboardIdleBacklight\settings.json')
@@ -45,11 +47,13 @@ if (Test-Path $configPath) {
   $settings = Get-Content $configPath -Raw | ConvertFrom-Json
   if ([int]$settings.TimeoutSeconds -in 1,3,5,10,30,60,120,300) { $script:timeoutSeconds = [int]$settings.TimeoutSeconds }
   if ($settings.MouseWakeEnabled -is [bool]) { $script:mouseWakeEnabled = $settings.MouseWakeEnabled }
+  if ($settings.SuppressFirstWakeKey -is [bool]) { $script:suppressFirstWakeKey = $settings.SuppressFirstWakeKey }
+  if ($settings.ProlongedWakeHold -is [bool]) { $script:prolongedWakeHold = $settings.ProlongedWakeHold }
   if ([int]$settings.OnBrightness -in 2,3) { $script:onBrightness = [int]$settings.OnBrightness }
  } catch {}
 }
 function Save-Settings {
- @{TimeoutSeconds=$script:timeoutSeconds;OnBrightness=$script:onBrightness;MouseWakeEnabled=$script:mouseWakeEnabled} | ConvertTo-Json | Set-Content -LiteralPath $configPath
+ @{TimeoutSeconds=$script:timeoutSeconds;OnBrightness=$script:onBrightness;MouseWakeEnabled=$script:mouseWakeEnabled;SuppressFirstWakeKey=$script:suppressFirstWakeKey;ProlongedWakeHold=$script:prolongedWakeHold} | ConvertTo-Json | Set-Content -LiteralPath $configPath
 }
 function Select-IdleMilliseconds([uint32]$AllInputIdle, [uint32]$KeyboardInputIdle) {
  if ($script:mouseWakeEnabled) { return $AllInputIdle }
@@ -71,6 +75,7 @@ Add-Type -AssemblyName System.Drawing
 [System.Windows.Forms.Application]::EnableVisualStyles()
 Add-Type -Path @((Join-Path $PSScriptRoot 'WakeKeyPolicy.cs'),(Join-Path $PSScriptRoot 'KeyboardActivityClock.cs')) -ReferencedAssemblies System.Windows.Forms
 $keyboardClock = New-Object KeyboardActivityClock
+$keyboardClock.Configure($script:suppressFirstWakeKey,$script:prolongedWakeHold)
 $script:exitRequested = $false
 $tray = New-Object System.Windows.Forms.NotifyIcon
 $tray.Icon = [System.Drawing.SystemIcons]::Information
@@ -125,12 +130,35 @@ $mouseItem.add_Click({
 })
 [void]$menu.Items.Add($mouseItem)
 [void]$menu.Items.Add('-')
+$suppressItem = New-Object System.Windows.Forms.ToolStripMenuItem("First wake key doesn't type")
+$suppressItem.CheckOnClick = $true
+$suppressItem.Checked = $script:suppressFirstWakeKey
+$suppressItem.add_Click({
+ param($sender,$eventArgs)
+ $script:suppressFirstWakeKey = $sender.Checked
+ $keyboardClock.Configure($script:suppressFirstWakeKey,$script:prolongedWakeHold)
+ $script:applyRequested = $true
+ try { Save-Settings; Write-Activity "First wake key suppression: $script:suppressFirstWakeKey." } catch { Write-Activity $_.Exception.Message }
+})
+[void]$menu.Items.Add($suppressItem)
+$holdItem = New-Object System.Windows.Forms.ToolStripMenuItem('Keep on for 15 seconds after long pause')
+$holdItem.CheckOnClick = $true
+$holdItem.Checked = $script:prolongedWakeHold
+$holdItem.add_Click({
+ param($sender,$eventArgs)
+ $script:prolongedWakeHold = $sender.Checked
+ $keyboardClock.Configure($script:suppressFirstWakeKey,$script:prolongedWakeHold)
+ $script:applyRequested = $true
+ try { Save-Settings; Write-Activity "Prolonged wake hold: $script:prolongedWakeHold." } catch { Write-Activity $_.Exception.Message }
+})
+[void]$menu.Items.Add($holdItem)
+[void]$menu.Items.Add('-')
 $exitItem = $menu.Items.Add('Exit')
 $exitItem.add_Click({ $script:exitRequested = $true })
 $tray.ContextMenuStrip = $menu
 $tray.Visible = $true
 $failures=0
-Write-Activity "Started v5: timeout=$script:timeoutSeconds seconds; back-on brightness=$script:onBrightness; mouse wake=$script:mouseWakeEnabled; long-dark wake=15s, hold=15s."
+Write-Activity "Started v6: timeout=$script:timeoutSeconds seconds; back-on brightness=$script:onBrightness; mouse wake=$script:mouseWakeEnabled; suppress wake key=$script:suppressFirstWakeKey; prolonged hold=$script:prolongedWakeHold."
 try {
  while (-not $script:exitRequested) {
   [System.Windows.Forms.Application]::DoEvents()
